@@ -40,11 +40,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
+#ifdef HAS_UNISTD_H
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <sys/types.h>
 #include <libp11.h>
-#include <unistd.h>
 
 #define RANDOM_SOURCE "/dev/urandom"
 #define RANDOM_SIZE 20

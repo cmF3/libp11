@@ -39,7 +39,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef HAS_UNISTD_H
 #include <unistd.h>
+#endif
 #if !defined(_WIN32) || defined(__CYGWIN__)
 #include <termios.h>
 #endif

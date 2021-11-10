@@ -402,9 +402,9 @@ static int pkcs11_rsa_priv_enc_method(int flen, const unsigned char *from,
 
 static int pkcs11_rsa_free_method(RSA *rsa)
 {
-	RSA_set_ex_data(rsa, rsa_ex_index, NULL);
 	int (*orig_rsa_free_method)(RSA *rsa) =
 		RSA_meth_get_finish(RSA_get_default_method());
+	RSA_set_ex_data(rsa, rsa_ex_index, NULL);
 	if (orig_rsa_free_method) {
 		return orig_rsa_free_method(rsa);
 	}

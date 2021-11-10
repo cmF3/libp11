@@ -43,7 +43,9 @@
 #include <termios.h>
 #endif
 #include <stdio.h>
+#ifdef HAS_UNISTD_H
 #include <unistd.h>
+#endif HAS_UNISTD_H
 #include <string.h>
 #include <libp11.h>
 
