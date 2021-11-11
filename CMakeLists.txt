@@ -11,13 +11,19 @@ project(
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 
-configure_file(src/config.h.cmake.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+# --- config.h.in ---
+
+configure_file(src/config.h.cmake.in config.h)
 
 include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckSymbolExists)
-set(AC_APPLE_UNIVERSAL_BUILD)
-set(DEFAULT_PKCS11_MODULE /usr/lib/p11-kit-proxy.so)
+set(AC_APPLE_UNIVERSAL_BUILD
+    ""
+    CACHE INTERNAL "Apple Universal Build")
+set(DEFAULT_PKCS11_MODULE
+    "/usr/lib/p11-kit-proxy.so"
+    CACHE INTERNAL "Default PKCS11 Module")
 check_include_file(dlfcn.h HAVE_DLFCN_H)
 check_include_file(errno.h HAVE_ERRNO_H)
 check_include_file(fcntl.h HAVE_FCNTL_H)
@@ -25,7 +31,9 @@ check_include_file(getopt.h HAVE_GETOPT_H)
 check_include_file(inttypes.h HAVE_INTTYPES_H)
 check_include_file(locale.h HAVE_LOCALE_H)
 check_include_file(malloc.h HAVE_MALLOC_H)
-set(HAVE_PTHREAD CMAKE_USE_PTHREADS_INIT)
+set(HAVE_PTHREAD
+    ${CMAKE_USE_PTHREADS_INIT}
+    CACHE INTERNAL "Have pthread")
 check_include_file(malloc.h HAVE_PTHREAD_PRIO_INHERIT)
 check_symbol_exists(PTHREAD_PRIO_INHERIT pthread.h HAVE_PTHREAD_PRIO_INHERIT)
 check_include_file(stdint.h HAVE_STDINT_H)
@@ -37,20 +45,49 @@ check_include_file(sys/stat.h HAVE_SYS_STAT_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
-check_include_file(unistd.h HAS_UNISTD_H)
+check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(utmp.h HAVE_UTMP_H)
-set(LT_OBJDIR .libs/)
-set(PACKAGE ${PROJECT_NAME})
-set(PACKAGE_BUGREPORT)
-set(PACKAGE_NAME ${PROJECT_NAME})
-set(PACKAGE_STRING ${PROJECT_NAME} ${PROJECT_VERSION})
-set(PACKAGE_TARNAME ${PROJECT_NAME})
-set(PACKAGE_URL)
-set(PACKAGE_VERSION ${PROJECT_VERSION})
-set(PTHREAD_CREATE_JOINABLE)
-CHECK_INCLUDE_FILES ("stdlib.h;stdarg.h;string.h;float.h" STDC_HEADERS)
-set(USE_CYGWIN)
-set(VERSION ${PROJECT_VERSION})
+set(LT_OBJDIR
+    .libs/
+    CACHE INTERNAL "Object Dir")
+set(PACKAGE
+    ${PROJECT_NAME}
+    CACHE INTERNAL "Package")
+set(PACKAGE_BUGREPORT
+    ""
+    CACHE INTERNAL "Bugreport")
+set(PACKAGE_NAME
+    ${PROJECT_NAME}
+    CACHE INTERNAL "Package Name")
+set(PACKAGE_STRING
+    ${PROJECT_NAME} ${PROJECT_VERSION}
+    CACHE INTERNAL "Package String")
+set(PACKAGE_TARNAME
+    ${PROJECT_NAME}
+    CACHE INTERNAL "Package Tarname")
+set(PACKAGE_URL
+    ""
+    CACHE INTERNAL "Package Url")
+set(PACKAGE_VERSION
+    ${PROJECT_VERSION}_git
+    CACHE INTERNAL "Package Version")
+set(PTHREAD_CREATE_JOINABLE
+    ""
+    CACHE INTERNAL "Pthread Create Joinable")
+check_include_files("stdlib.h;stdarg.h;string.h;float.h" STDC_HEADERS)
+set(USE_CYGWIN
+    ""
+    CACHE INTERNAL "Use Cygwin")
+set(VERSION
+    ${PROJECT_VERSION}_git
+    CACHE INTERNAL "Version")
+
+# --- internal ---
+
+set(libdir ${CMAKE_INSTALL_PREFIX}/lib)
+set(enginesexecdir /usr/lib/engines-1.1)
+set(pkcs11_module ${DEFAULT_PKCS11_MODULE})
+set(enable_api_doc FALSE)
 
 # --- libp11 ---
 
@@ -82,8 +119,10 @@ target_sources(
 
 target_link_libraries(${targetName} PRIVATE OpenSSL::Crypto)
 
+target_include_directories(${targetName} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
 if(WIN32)
-target_compile_definitions(${targetName} PRIVATE _WIN32_WINNT=0x0600)
+  target_compile_definitions(${targetName} PRIVATE _WIN32_WINNT=0x0600)
 endif()
 
 if(HAS_UNISTD_H)
@@ -105,10 +144,12 @@ target_sources(
   ${targetName} PRIVATE ${${targetName}Resources} ${${targetName}Sources}
                         ${${targetName}ExportHeaderList})
 
+target_include_directories(${targetName} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
 target_link_libraries(${targetName} PRIVATE OpenSSL::Crypto)
 
 if(WIN32)
-target_compile_definitions(${targetName} PRIVATE _WIN32_WINNT=0x0600)
+  target_compile_definitions(${targetName} PRIVATE _WIN32_WINNT=0x0600)
 endif()
 
 # --- examples ---
@@ -121,26 +162,27 @@ foreach(ex ${EXAMPLES})
   target_link_libraries(${ex} PRIVATE OpenSSL::Crypto)
 endforeach()
 
-#include(GNUInstallDirs)
+include(GNUInstallDirs)
 install(TARGETS libp11)
-# install(TARGETS pkcs11)
+install(TARGETS pkcs11)
 install(TARGETS ${EXAMPLES})
 
-message("
+message(
+  "
 
 libp11 has been configured with the following options:
 
-Version:                 ${PROJECT_VERSION}
+Version:                 ${PACKAGE_VERSION}
 libp11 directory:        ${libdir}
 Engine directory:        ${enginesexecdir}
 Default PKCS11 module:   ${pkcs11_module}
 API doc support:         ${enable_api_doc}
 
-Host:                    ${CMAKE_HOST_SYSTEM_NAME} 
-Compiler:                ${CMAKE_C_COMPILER}
-Preprocessor flags:      ${CMAKE_CPPFLAGS}
-Compiler flags:          ${CMAKE_C_FLAGS}
-Linker flags:            ${CMAKE_SHARED_LINKER_FLAGS}
+Host:                    ${host}
+Compiler:                ${CC}
+Preprocessor flags:      ${CPPFLAGS}
+Compiler flags:          ${CFLAGS}
+Linker flags:            ${LDFLAGS}
 Libraries:               ${LIBS}
 
 OPENSSL_CFLAGS:          ${OPENSSL_CFLAGS}
